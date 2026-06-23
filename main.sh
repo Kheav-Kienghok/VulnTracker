@@ -29,7 +29,7 @@ main() {
     search_vulnerabilities
     echo
 
-    generate_report "${SCRIPT_DIR}/output"
+    generate_report "${SCRIPT_DIR}/output" > /dev/null
 }
 
 main "$@"
