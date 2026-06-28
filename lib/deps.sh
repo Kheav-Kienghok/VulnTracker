@@ -6,12 +6,17 @@
 REQUIRED_DEPS=("nmap" "searchsploit")
 
 check_dependencies() {
+    local deps=("$@")
+    if [[ ${#deps[@]} -eq 0 ]]; then
+        deps=("${REQUIRED_DEPS[@]}")
+    fi
+
     print_section "Dependency Check"
 
     local missing=()
     local found=()
 
-    for dep in "${REQUIRED_DEPS[@]}"; do
+    for dep in "${deps[@]}"; do
         if command -v "$dep" >/dev/null 2>&1; then
             found+=("$dep")
         else

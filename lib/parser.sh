@@ -6,6 +6,7 @@
 PARSED_PORTS=()
 PARSED_SERVICES=()
 PARSED_VERSIONS=()
+FORMATTED_SCAN_RESULTS=""
 
 parse_nmap_output() {
     local nmap_file="$1"
@@ -20,19 +21,21 @@ parse_nmap_output() {
     PARSED_PORTS=()
     PARSED_SERVICES=()
     PARSED_VERSIONS=()
+    FORMATTED_SCAN_RESULTS=""
 
     local count=0
 
     while IFS= read -r line; do
-        if [[ "$line" =~ ^([0-9]+/[a-z]+)[[:space:]]+open[[:space:]]+([^ ]+)[[:space:]]+(.*) ]]; then
+        if [[ "$line" =~ ^([0-9]+/[a-z]+)[[:space:]]+open[[:space:]]+([^[:space:]]+)([[:space:]]+(.*))?$ ]]; then
             local port="${BASH_REMATCH[1]}"
             local service="${BASH_REMATCH[2]}"
             local version
-            version=$(echo "${BASH_REMATCH[3]}" | xargs)
+            version=$(echo "${BASH_REMATCH[4]:-unknown}" | xargs)
 
             PARSED_PORTS+=("$port")
             PARSED_SERVICES+=("$service")
             PARSED_VERSIONS+=("$version")
+            FORMATTED_SCAN_RESULTS+="${port}|${service}|${version}"$'\n'
 
             echo -e "    ${GREEN}●${RESET}  ${BOLD}${port}${RESET}  ${service}  ${DIM}${version}${RESET}"
             ((count++)) || true
@@ -48,4 +51,18 @@ parse_nmap_output() {
 
     log_success "Discovered ${BOLD}${count}${RESET}${GREEN} open port(s)${RESET}"
     return 0
+}
+
+write_scan_summary() {
+    local output_dir="${1:-output}"
+    local output_file="${output_dir}/parsed_services.txt"
+
+    mkdir -p "$output_dir"
+
+    {
+        echo "port|service|version"
+        printf "%s" "$FORMATTED_SCAN_RESULTS"
+    } > "$output_file"
+
+    log_success "Parsed service summary saved to ${BOLD}${output_file}${RESET}"
 }
